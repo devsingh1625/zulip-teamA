@@ -32,7 +32,7 @@ PAGER_DUTY_EVENT_NAMES_V2 = {
 
 PAGER_DUTY_EVENT_NAMES_V3 = {
     "incident.acknowledged",
-    "incident.annotated", 
+    "incident.annotated",
     "incident.conference_bridge.updated",
     "incident.custom_field_values.updated",
     "incident.delegated",
@@ -50,7 +50,7 @@ PAGER_DUTY_EVENT_NAMES_V3 = {
     "incident.unacknowledged",
     "incident.workflow.started",
     "incident.workflow.completed",
- 
+
     "service.created",
     "service.custom_field_values.updated",
     "service.deleted",
