@@ -119,8 +119,8 @@ Incident [{incident_num_title}]({incident_url}) resolved.
 """.strip()
 
 
-def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
-    format_dict: FormatDictType = {}
+def build_pagerduty_formatdict(message: WildValue) -> dict[str, str | int]:
+    format_dict: dict[str, str | int] = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES[message["type"].tame(check_string)]
 
     format_dict["incident_id"] = message["data"]["incident"]["id"].tame(check_string)
@@ -165,8 +165,8 @@ def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
     return format_dict
 
 
-def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType:
-    format_dict: FormatDictType = {}
+def build_pagerduty_formatdict_v2(message: WildValue) -> dict[str, str | int]:
+    format_dict: dict[str, str | int] = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V2[message["event"].tame(check_string)]
 
     format_dict["incident_id"] = message["incident"]["id"].tame(check_string)
@@ -212,7 +212,7 @@ def build_pagerduty_formatdict_v3(event: WildValue) -> FormatDictType:
 
 def build_incident_formatdict_v3(event_data: WildValue) -> FormatDictType:
     """Handle incident events with the original incident data structure"""
-    format_dict: FormatDictType = {}
+    format_dict: dict[str, str | int] = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event_data["event_type"].tame(check_string)]
 
     format_dict["incident_id"] = event_data["data"]["id"].tame(check_string)
@@ -304,33 +304,9 @@ def send_formatted_pagerduty(
     assert isinstance(format_dict["action"], str)
     check_send_webhook_message(request, user_profile, topic_name, body, format_dict["action"])
 
-
 @webhook_view("PagerDuty", all_event_types=ALL_EVENT_TYPES)
 @typed_endpoint
 def api_pagerduty_webhook(
-    # Verify PagerDuty webhook signature
-    pagerduty_signature = request.META.get("HTTP_X_PAGERDUTY_SIGNATURE")
-    if pagerduty_signature:
-        # Parse "v1=hex1,v1=hex2" format
-        signatures = []
-        for sig_part in pagerduty_signature.split(","):
-            sig_part = sig_part.strip()
-            if sig_part.startswith("v1="):
-                hex_signature = sig_part[3:]  # Remove "v1=" prefix
-                signatures.append(hex_signature)
-
-        # Try each signature
-        signature_valid = False
-        for signature in signatures:
-            try:
-                validate_webhook_signature(request, request.body.decode(), signature)
-                signature_valid = True
-                break
-            except JsonableError:
-                continue
-
-        if not signature_valid:
-            raise JsonableError(_("Invalid webhook signature"))
     request: HttpRequest,
     user_profile: UserProfile,
     *,
