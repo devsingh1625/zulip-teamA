@@ -119,8 +119,8 @@ Incident [{incident_num_title}]({incident_url}) resolved.
 """.strip()
 
 
-def build_pagerduty_formatdict(message: WildValue) -> dict[str, str | int]:
-    format_dict: dict[str, str | int] = {}
+def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
+    format_dict: FormatDictType = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES[message["type"].tame(check_string)]
 
     format_dict["incident_id"] = message["data"]["incident"]["id"].tame(check_string)
