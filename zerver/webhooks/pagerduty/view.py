@@ -164,8 +164,8 @@ def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
     return format_dict
 
 
-def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType:
-    format_dict: FormatDictType = {}
+def build_pagerduty_formatdict_v2(message: WildValue) -> dict[str, str | int]:
+    format_dict: dict[str, str | int] = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V2[message["event"].tame(check_string)]
 
     format_dict["incident_id"] = message["incident"]["id"].tame(check_string)
@@ -198,8 +198,20 @@ def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType:
     return format_dict
 
 
-def build_pagerduty_formatdict_v3(event: WildValue) -> FormatDictType:
-    format_dict: FormatDictType = {}
+def build_pagerduty_formatdict_v3(event: WildValue) -> dict[str, str | int]:
+    data_type = event["data"]["type"].tame(check_string)
+    
+    # Route based on data structure type
+    if data_type == "service":
+        return build_service_formatdict_v3(event)
+    else:
+        # Handle all incident-related events (incident, incident_note, etc.)
+        return build_incident_formatdict_v3(event)
+
+
+def build_incident_formatdict_v3(event: WildValue) -> dict[str, str | int]:
+    """Handle incident events with the original incident data structure"""
+    format_dict: dict[str, str | int] = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event["event_type"].tame(check_string)]
 
     format_dict["incident_id"] = event["data"]["id"].tame(check_string)
