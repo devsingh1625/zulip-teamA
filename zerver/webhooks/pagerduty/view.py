@@ -308,29 +308,6 @@ def send_formatted_pagerduty(
 @webhook_view("PagerDuty", all_event_types=ALL_EVENT_TYPES)
 @typed_endpoint
 def api_pagerduty_webhook(
-    # Verify PagerDuty webhook signature
-    pagerduty_signature = request.META.get("HTTP_X_PAGERDUTY_SIGNATURE")
-    if pagerduty_signature:
-        # Parse "v1=hex1,v1=hex2" format
-        signatures = []
-        for sig_part in pagerduty_signature.split(","):
-            sig_part = sig_part.strip()
-            if sig_part.startswith("v1="):
-                hex_signature = sig_part[3:]  # Remove "v1=" prefix
-                signatures.append(hex_signature)
-
-        # Try each signature
-        signature_valid = False
-        for signature in signatures:
-            try:
-                validate_webhook_signature(request, request.body.decode(), signature)
-                signature_valid = True
-                break
-            except JsonableError:
-                continue
-
-        if not signature_valid:
-            raise JsonableError(_("Invalid webhook signature"))
     request: HttpRequest,
     user_profile: UserProfile,
     *,
