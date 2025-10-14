@@ -59,7 +59,7 @@ PAGER_DUTY_EVENT_NAMES_V3 = {
 
 ALL_EVENT_TYPES = [
     "resolved",
-    "assigned", 
+    "assigned",
     "unacknowledged",
     "acknowledged",
     "triggered",
@@ -119,8 +119,8 @@ Incident [{incident_num_title}]({incident_url}) resolved.
 """.strip()
 
 
-def build_pagerduty_formatdict(message: WildValue) -> dict[str, str | int]:
-    format_dict: dict[str, str | int] = {}
+def build_pagerduty_formatdict(message: WildValue) -> FormatDictType: 
+    format_dict: FormatDictType = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES[message["type"].tame(check_string)]
 
     format_dict["incident_id"] = message["data"]["incident"]["id"].tame(check_string)
@@ -165,8 +165,8 @@ def build_pagerduty_formatdict(message: WildValue) -> dict[str, str | int]:
     return format_dict
 
 
-def build_pagerduty_formatdict_v2(message: WildValue) -> dict[str, str | int]:
-    format_dict: dict[str, str | int] = {}
+def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType: 
+    format_dict: FormatDictType = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V2[message["event"].tame(check_string)]
 
     format_dict["incident_id"] = message["incident"]["id"].tame(check_string)
@@ -210,22 +210,22 @@ def build_pagerduty_formatdict_v3(event: WildValue) -> FormatDictType:
         return build_incident_formatdict_v3(event)
 
 
-def build_incident_formatdict_v3(event_data: WildValue) -> FormatDictType:
+def build_incident_formatdict_v3(event: WildValue) -> FormatDictType:
     """Handle incident events with the original incident data structure"""
-    format_dict: dict[str, str | int] = {}
-    format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event_data["event_type"].tame(check_string)]
+    format_dict: FormatDictType = {}
+    format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event["event_type"].tame(check_string)]
 
-    format_dict["incident_id"] = event_data["data"]["id"].tame(check_string)
-    format_dict["incident_url"] = event_data["data"]["html_url"].tame(check_string)
+    format_dict["incident_id"] = event["data"]["id"].tame(check_string)
+    format_dict["incident_url"] = event["data"]["html_url"].tame(check_string)
     format_dict["incident_num_title"] = NUM_TITLE.format(
-        incident_num=event_data["data"]["number"].tame(check_int),
-        incident_title=event_data["data"]["title"].tame(check_string),
+        incident_num=event["data"]["number"].tame(check_int),
+        incident_title=event["data"]["title"].tame(check_string),
     )
 
-    format_dict["service_name"] = event_data["data"]["service"]["summary"].tame(check_string)
-    format_dict["service_url"] = event_data["data"]["service"]["html_url"].tame(check_string)
+    format_dict["service_name"] = event["data"]["service"]["summary"].tame(check_string)
+    format_dict["service_url"] = event["data"]["service"]["html_url"].tame(check_string)
 
-    assignees = event_data["data"]["assignees"]
+    assignees = event["data"]["assignees"]
     if assignees:
         assignee = assignees[0]
         format_dict["assignee_info"] = AGENT_TEMPLATE.format(
@@ -235,7 +235,7 @@ def build_incident_formatdict_v3(event_data: WildValue) -> FormatDictType:
     else:
         format_dict["assignee_info"] = "nobody"
 
-    agent = event_data.get("agent")
+    agent = event.get("agent")
     if agent is not None:
         format_dict["agent_info"] = AGENT_TEMPLATE.format(
             username=agent["summary"].tame(check_string),
@@ -248,15 +248,15 @@ def build_incident_formatdict_v3(event_data: WildValue) -> FormatDictType:
     return format_dict
 
 
-def build_service_formatdict_v3(event_data: WildValue) -> FormatDictType:
+def build_service_formatdict_v3(event: WildValue) -> FormatDictType:
     """Handle service events with the service data structure"""
-    format_dict: dict[str, str | int] = {}
-    format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event_data["event_type"].tame(check_string)]
+    format_dict: FormatDictType = {}
+    format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V3[event["event_type"].tame(check_string)]
 
     # Service events have different field structure
-    format_dict["service_id"] = event_data["data"]["id"].tame(check_string)
-    format_dict["service_name"] = event_data["data"]["summary"].tame(check_string)
-    format_dict["service_url"] = event_data["data"]["html_url"].tame(check_string)
+    format_dict["service_id"] = event["data"]["id"].tame(check_string)
+    format_dict["service_name"] = event["data"]["summary"].tame(check_string)
+    format_dict["service_url"] = event["data"]["html_url"].tame(check_string)
 
     # Service events don't have incident-specific fields
     format_dict["incident_id"] = format_dict["service_id"]  # Reuse for compatibility
@@ -266,7 +266,7 @@ def build_service_formatdict_v3(event_data: WildValue) -> FormatDictType:
     format_dict["trigger_message"] = ""
 
     # Handle agent if present (for service update events)
-    agent = event_data.get("agent")
+    agent = event.get("agent")
     if agent:
         format_dict["agent_info"] = AGENT_TEMPLATE.format(
             username=agent["summary"].tame(check_string),
@@ -280,7 +280,7 @@ def send_formatted_pagerduty(
     request: HttpRequest,
     user_profile: UserProfile,
     message_type: str,
-    format_dict: dict[str, str | int],
+    format_dict: FormatDictType,
 ) -> None:
     if message_type in (
         "incident.trigger",
