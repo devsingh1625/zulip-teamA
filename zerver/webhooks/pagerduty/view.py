@@ -119,7 +119,7 @@ Incident [{incident_num_title}]({incident_url}) resolved.
 """.strip()
 
 
-def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
+def build_pagerduty_formatdict(message: WildValue) -> FormatDictType: 
     format_dict: FormatDictType = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES[message["type"].tame(check_string)]
 
@@ -165,7 +165,7 @@ def build_pagerduty_formatdict(message: WildValue) -> FormatDictType:
     return format_dict
 
 
-def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType:
+def build_pagerduty_formatdict_v2(message: WildValue) -> FormatDictType: 
     format_dict: FormatDictType = {}
     format_dict["action"] = PAGER_DUTY_EVENT_NAMES_V2[message["event"].tame(check_string)]
 
@@ -310,7 +310,6 @@ def send_formatted_pagerduty(
     body = template.format(**format_dict)
     assert isinstance(format_dict["action"], str)
     check_send_webhook_message(request, user_profile, topic_name, body, format_dict["action"])
-
 
 @webhook_view("PagerDuty", all_event_types=ALL_EVENT_TYPES)
 @typed_endpoint
