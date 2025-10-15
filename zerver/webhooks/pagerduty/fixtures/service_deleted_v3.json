@@ -1,0 +1,11 @@
+{
+  "event": {
+    "event_type": "service.deleted",
+    "data": {
+      "id": "PSERVICE1",
+      "type": "service",
+      "summary": "Test Service",
+      "html_url": "https://pig208.pagerduty.com/services/PSERVICE1"
+    }
+  }
+}
