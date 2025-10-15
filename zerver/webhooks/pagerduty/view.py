@@ -21,7 +21,7 @@ PAGER_DUTY_EVENT_NAMES = {
     "incident.resolve": "resolved",
     "incident.assign": "assigned",
     "incident.escalate": "escalated",
-    "incident.delegate": "delineated",
+    "incident.delegate": "delegated",
 }
 
 PAGER_DUTY_EVENT_NAMES_V2 = {
@@ -67,7 +67,7 @@ ALL_EVENT_TYPES = [
     "reopened",
     "priority updated",
     "annotated",
-    "delegated", 
+    "delegated",
     "escalated",
     "status update published",
     "conference bridge updated",
@@ -76,7 +76,7 @@ ALL_EVENT_TYPES = [
     "responder added",
     "responder replied",
     "service updated",
-    "workflow started", 
+    "workflow started",
     "workflow completed",
     "created",
     "updated",
@@ -282,24 +282,31 @@ def send_formatted_pagerduty(
     message_type: str,
     format_dict: FormatDictType,
 ) -> None:
-    if message_type in (
+    # Handle service events
+    if message_type in ("service.created", "service.updated", "service.deleted"):
+        template = "Service [{incident_num_title}]({incident_url}) {action}."
+        topic_name = "Service {incident_num_title}".format(**format_dict)
+    elif message_type in (
         "incident.trigger",
         "incident.triggered",
         "incident.unacknowledge",
         "incident.unacknowledged",
     ):
         template = INCIDENT_WITH_SERVICE_AND_ASSIGNEE
+        topic_name = "Incident {incident_num_title}".format(**format_dict)
     elif message_type in ("incident.resolve", "incident.resolved"):
         if "agent_info" in format_dict:
             template = INCIDENT_RESOLVED_WITH_AGENT
         else:
             template = INCIDENT_RESOLVED
+        topic_name = "Incident {incident_num_title}".format(**format_dict)
     elif message_type in ("incident.assign", "incident.reassigned"):
         template = INCIDENT_ASSIGNED
+        topic_name = "Incident {incident_num_title}".format(**format_dict)
     else:
         template = INCIDENT_WITH_ASSIGNEE
+        topic_name = "Incident {incident_num_title}".format(**format_dict)
 
-    topic_name = "Incident {incident_num_title}".format(**format_dict)
     body = template.format(**format_dict)
     assert isinstance(format_dict["action"], str)
     check_send_webhook_message(request, user_profile, topic_name, body, format_dict["action"])
@@ -324,6 +331,10 @@ def api_pagerduty_webhook(
                 signatures.append(hex_signature)
 
         # Try each signature
+
+        if not signatures:
+            raise JsonableError(_("Webhook signature verification failed."))
+
         signature_valid = False
         for signature in signatures:
             try:
@@ -334,7 +345,7 @@ def api_pagerduty_webhook(
                 continue
 
         if not signature_valid:
-            raise JsonableError(_("Invalid webhook signature"))
+            raise JsonableError(_("Webhook signature verification failed."))
 
     messages = payload.get("messages")
     if messages:
